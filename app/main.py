@@ -1,7 +1,8 @@
 from typing import Annotated
 
-from fastapi import FastAPI, Body, HTTPException, Request, Depends, Query
+from fastapi import FastAPI, Body, HTTPException, Request, Depends, Query, Response
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -93,25 +94,26 @@ def get_age_group(age: int | None) -> str:
         return "senior"
 
 @app.post("/api/profiles", response_model=ProfileResponse | ExistingProfileResponse, status_code=201)
-async def create_profile(name: str = Body(None, embed=True), db: Session = Depends(get_db)):
-    if name is None or name.strip == "":
+async def create_profile(*, name: str = Body(None, embed=True), db: Session = Depends(get_db), response: Response): 
+    if name is None or name.strip() == "":
         raise HTTPException(status_code=400, detail="Missing or empty name")
 
     try:
-        name = name.lower()
+        name = name.lower().strip()
         db_profile = db.query(Profile).filter(Profile.name == name).first()
         if db_profile:
             date_to_string = db_profile.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')
             db_profile.created_at = date_to_string
+            response.status_code = 200
             return {
                 "status": "success",
                 "message": "Profile already exists",
-                "data": db_profile
+                "data": jsonable_encoder(db_profile)
             }
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail="Upstream or server failure"
+            detail=f"Upstream or server failure: {str(e)}"
         )
 
     
