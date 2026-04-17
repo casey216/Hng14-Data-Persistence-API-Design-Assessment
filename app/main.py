@@ -1,5 +1,3 @@
-import uuid
-from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import FastAPI, Body, HTTPException, Request, Depends, Query
@@ -100,6 +98,7 @@ async def create_profile(name: str = Body(None, embed=True), db: Session = Depen
         raise HTTPException(status_code=400, detail="Missing or empty name")
 
     try:
+        name = name.lower()
         db_profile = db.query(Profile).filter(Profile.name == name).first()
         if db_profile:
             date_to_string = db_profile.created_at.strftime('%Y-%m-%dT%H:%M:%SZ')
