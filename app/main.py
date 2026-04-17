@@ -217,3 +217,9 @@ async def delete_name(id: str, db: Session = Depends(get_db)):
         )
     db.delete(db_profile)
     db.commit()
+
+
+if __name__=="__main__":
+    import uvicorn
+
+    uvicorn.run(app=app, host="0.0.0.0", port=8080)
