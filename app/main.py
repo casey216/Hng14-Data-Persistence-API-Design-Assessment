@@ -1,11 +1,8 @@
 from typing import Annotated
 
-from fastapi import FastAPI, Body, HTTPException, Request, Depends, Query, Response
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Body, HTTPException, Depends, Query, Response
 from fastapi.encoders import jsonable_encoder
-from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 import requests
 
@@ -13,7 +10,7 @@ from app.models import Profile
 from app.db import get_db, Base, engine
 from app.schemas import ProfileResponse, ExistingProfileResponse, AllProfileResponse, FilterParams
 from app.exceptions import add_exception_handlers
-
+from app.utils import get_age_group
 
 app = FastAPI()
 
@@ -28,20 +25,6 @@ app.add_middleware(
 add_exception_handlers(app)
 
 Base.metadata.create_all(bind=engine)
-
-
-def get_age_group(age: int | None) -> str:
-    if age is None:
-        return "unknown"
-    
-    if age <= 12:
-        return "child"
-    elif age <= 19:
-        return "teenager"
-    elif age <= 59:
-        return "adult"
-    else:
-        return "senior"
 
 @app.post("/api/profiles", response_model=ProfileResponse | ExistingProfileResponse, status_code=201)
 async def create_profile(*, name: str = Body(None, embed=True), db: Session = Depends(get_db), response: Response): 
