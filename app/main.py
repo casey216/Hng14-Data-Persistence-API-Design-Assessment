@@ -12,6 +12,7 @@ import requests
 from app.models import Profile
 from app.db import get_db, Base, engine
 from app.schemas import ProfileResponse, ExistingProfileResponse, AllProfileResponse, FilterParams
+from app.exceptions import add_exception_handlers
 
 
 app = FastAPI()
@@ -24,27 +25,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+add_exception_handlers(app)
+
 Base.metadata.create_all(bind=engine)
-
-@app.exception_handler(HTTPException)
-async def custom_http_exception_handler(request: Request, exc: HTTPException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "status": "error",
-            "message": exc.detail
-        }
-    )
-
-@app.exception_handler(RequestValidationError)
-async def custom_request_validation_error_handler(request: Request, exc: RequestValidationError):
-    return JSONResponse(
-        status_code=422,
-        content={
-            "status": "error",
-            "message": exc.errors()[0].get("msg")
-        }
-    )
 
 
 def get_age_group(age: int | None) -> str:
